@@ -1,8 +1,10 @@
 
 package com.example.projeto.service;
 
+import com.example.projeto.exception.ResourceNotFoundException;
 import com.example.projeto.model.Product;
 import com.example.projeto.repository.ProductRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,37 +12,32 @@ import java.util.List;
 
 @Service
 public class ProductService {
-    private final ProductRepository productRepository;
+    @Autowired
+    private ProductRepository produtoRepository;
 
-    public ProductService(ProductRepository productRepository) {
-        this.productRepository = productRepository;
+    public List<Product> listarTodos() {
+        return produtoRepository.findAll();
     }
 
-    public List<Product> listAll() {
-        return productRepository.findAll();
+    public Product buscarPorId(Long id) {
+        return produtoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado com id: " + id));
     }
 
-    public Product getById(Long id) {
-        return productRepository.findById(id).orElse(null);
+    public Product salvar(Product produto) {
+        return produtoRepository.save(produto);
     }
 
-    @Transactional
-    public Product create(Product p) {
-        if (p.getPrice() < 0) throw new IllegalArgumentException("Price must be positive");
-        return productRepository.save(p);
+    public Product atualizar(Long id, Product produtoAtualizado) {
+        Product produto = buscarPorId(id);
+        produto.setName(produtoAtualizado.getName());
+        produto.setPrice(produtoAtualizado.getPrice());
+        produto.setStock(produtoAtualizado.getStock());
+        return produtoRepository.save(produto);
     }
 
-    @Transactional
-    public Product update(Long id, Product updated) {
-        Product p = productRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Product not found"));
-        p.setName(updated.getName());
-        p.setPrice(updated.getPrice());
-        p.setStock(updated.getStock());
-        return productRepository.save(p);
-    }
-
-    @Transactional
-    public void delete(Long id) {
-        productRepository.deleteById(id);
+    public void deletar(Long id) {
+        Product product = buscarPorId(id);
+        produtoRepository.delete(product);
     }
 }

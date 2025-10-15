@@ -1,8 +1,10 @@
 
 package com.example.projeto.service;
 
+import com.example.projeto.exception.ResourceNotFoundException;
 import com.example.projeto.model.User;
 import com.example.projeto.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,39 +13,32 @@ import java.util.List;
 @Service
 public class UserService {
 
-    private final UserRepository userRepository;
+    @Autowired
+    private UserRepository userRepository;
 
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-
-    public List<User> listAll() {
+    public List<User> listarTodos() {
         return userRepository.findAll();
     }
 
-    public User getById(Long id) {
-        return userRepository.findById(id).orElse(null);
+    public User buscarPorId(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com id: " + id));
     }
 
-    @Transactional
-    public User create(User user) {
-        if (userRepository.existsByEmail(user.getEmail())) {
-            throw new IllegalArgumentException("Email already in use");
-        }
+    public User salvar(User user) {
         return userRepository.save(user);
     }
 
-    @Transactional
-    public User update(Long id, User updated) {
-        User u = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("User not found"));
-        u.setName(updated.getName());
-        u.setEmail(updated.getEmail());
-        u.setPassword(updated.getPassword());
-        return userRepository.save(u);
+    public User atualizar(Long id, User userAtualizado) {
+        User usuario = buscarPorId(id);
+        usuario.setName(userAtualizado.getName());
+        usuario.setEmail(userAtualizado.getEmail());
+        usuario.setPassword(userAtualizado.getPassword());
+        return userRepository.save(usuario);
     }
 
-    @Transactional
-    public void delete(Long id) {
-        userRepository.deleteById(id);
+    public void deletar(Long id) {
+        User user = buscarPorId(id);
+        userRepository.delete(user);
     }
 }
